@@ -23,4 +23,4 @@ class EDMNoiseCond():
     
 class SigmoidNoiseCond():
     def __call__(self, logSNR):
-        return logSNR.sigmoid()
+        return (-logSNR).sigmoid()
