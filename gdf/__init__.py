@@ -32,7 +32,7 @@ class GDF():
     def undiffuse(self, x, logSNR, pred):
         a, b = self.input_scaler(logSNR)
         a, b = a.view(-1, *[1]*(len(x.shape)-1)), b.view(-1, *[1]*(len(x.shape)-1))
-        return self.target.x0_eps(x, pred, logSNR, a, b)
+        return self.target.x0(x, pred, logSNR, a, b), self.target.epsilon(x, pred, logSNR, a, b)
 
     def sample(self, model, model_inputs, shape, unconditional_inputs=None, sampler=None, t_start=1.0, t_end=0.0, timesteps=20, x_init=None, cfg=3.0, cfg_rho=0.7, sampler_params={}, shift=1, device="cpu"):
         if sampler is None:
