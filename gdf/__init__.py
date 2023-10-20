@@ -1,10 +1,10 @@
 import torch
-from scalers import *
-from targets import *
-from schedulers import *
-from noise_conditions import *
-from loss_weights import *
-from samplers import *
+from .scalers import *
+from .targets import *
+from .schedulers import *
+from .noise_conditions import *
+from .loss_weights import *
+from .samplers import *
 
 class GDF():
     def __init__(self, train_schedule, sample_schedule, input_scaler, target, noise_cond, loss_weight):
