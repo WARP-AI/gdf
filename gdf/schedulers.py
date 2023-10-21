@@ -28,6 +28,19 @@ class CosineTrainSchedule(CosineSampleSchedule):
     def schedule(self, batch_size):
         t = (1-torch.rand(batch_size)).add(0.001).clamp(0.001, 1.0)
         return super().schedule(t)
+    
+class CosineSampleSchedule2(BaseSchedule):
+    def __init__(self, logsnr_range=[-15, 15]):
+        self.t_min = np.arctan(np.exp(-0.5 * logsnr_range[1]))
+        self.t_max = np.arctan(np.exp(-0.5 * logsnr_range[0]))
+
+    def schedule(self, t):
+        return -2 * (self.t_min + t*(self.t_max-self.t_min)).tan().log()
+    
+class CosineTrainSchedule2(CosineSampleSchedule2):
+    def schedule(self, batch_size):
+        t = 1-torch.rand(batch_size)
+        return super().schedule(t)
 
 class RectifiedFlowsSampleSchedule(BaseSchedule):
     def __init__(self, clamp_range=[0, 1]):
