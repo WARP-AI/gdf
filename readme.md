@@ -58,18 +58,17 @@ So it's very easy to extend this framework with custom schedulers, scalers, targ
 
 When you define your training loop you can get all you need by just doing:
 ```python
-inputs = next(dataloader_iterator)
 shift, loss_shift = 1, 1 # this can be set to higher values as per what the Simple Diffusion paper sugested for high resolution
+for inputs, extra_conditions in dataloader_iterator:
+	noised, noise, target, logSNR, noise_cond, loss_weight = gdf.diffuse(inputs, shift=shift, loss_shift=loss_shift) 
+	pred = diffusion_model(noised, noise_cond, extra_conditions)
 
-noised, noise, target, logSNR, noise_cond, loss_weight = gdf.diffuse(inputs, shift=shift, loss_shift=loss_shift) 
-pred = diffusion_model(noised, noise_cond, extra_conditions)
+	loss = nn.functional.mse_loss(pred, target, reduction='none').mean(dim=[1, 2, 3])
+	loss_adjusted = (loss * loss_weight).mean()
 
-loss = nn.functional.mse_loss(pred, target, reduction='none').mean(dim=[1, 2, 3])
-loss_adjusted = (loss * loss_weight).mean()
-
-loss_adjusted.backward()
-optimizer.step()
-optimizer.zero_grad(set_to_none=True)
+	loss_adjusted.backward()
+	optimizer.step()
+	optimizer.zero_grad(set_to_none=True)
 ```
 And that's all, you have a diffusion model training, where it's very easy to customize the different elements of the training from the GDF class.
 
@@ -85,7 +84,8 @@ sampling_configs = {
 }
 
 *_, (sampled, _, _) = gdf.sample(
-	generator, {"cond": extra_conditions}, latents.shape, unconditional_inputs= {"cond": torch.zeros_like(extra_conditions)}, 
+	diffusion_model, {"cond": extra_conditions}, latents.shape, 
+	unconditional_inputs= {"cond": torch.zeros_like(extra_conditions)}, 
 	device=device, **sampling_configs
 )
 ```
