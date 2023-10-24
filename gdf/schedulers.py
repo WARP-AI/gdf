@@ -43,12 +43,11 @@ class CosineTrainSchedule2(CosineSampleSchedule2):
         return super().schedule(t)
 
 class RectifiedFlowsSampleSchedule(BaseSchedule):
-    def __init__(self, clamp_range=[0, 1]):
-        self.clamp_range = clamp_range
+    def __init__(self, logsnr_range=[-15, 15]):
+        self.logsnr_range = logsnr_range
 
     def schedule(self, t):
-        t = t.clamp(*self.clamp_range)
-        logSNR = (((1-t)**2)/(t**2)).log()
+        logSNR = (((1-t)**2)/(t**2)).log().clamp(*self.logsnr_range)
         return logSNR
     
 class RectifiedFlowsTrainSchedule(RectifiedFlowsSampleSchedule):
@@ -119,3 +118,5 @@ class InterpolatedSampleSchedule(BaseSchedule):
         low_logSNR = self.scheduler1(t, shift=self.shifts[0])
         high_logSNR = self.scheduler2(t, shift=self.shifts[1])
         return low_logSNR * t + high_logSNR * (1-t)
+    
+    
