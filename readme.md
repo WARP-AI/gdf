@@ -1,4 +1,4 @@
-# Generative Diffusion Framework
+# Generic Diffusion Framework
 
 ## Install
 
