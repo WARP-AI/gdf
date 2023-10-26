@@ -17,7 +17,24 @@ class ComposedLossWeight(BaseLossWeight):
         self.mul = mul
 
     def weight(self, logSNR):
-        return self.mul(logSNR)/self.div(logSNR)
+        prod, div = 1, 1
+        if isinstance(self.div, BaseLossWeight):
+            div *= self.div.weight(logSNR)
+        else:
+            for d in self.div:
+                if isinstance(d, BaseLossWeight):
+                    div *= d.weight(logSNR)
+                else:
+                    div *= d
+        if isinstance(self.mul, BaseLossWeight):
+            prod *= self.mul.weight(logSNR)
+        else:
+            for m in self.mul:
+                if isinstance(m, BaseLossWeight):
+                    prod *= m.weight(logSNR)
+                else:
+                    prod *= m
+        return prod/div
 
 class ConstantLossWeight(BaseLossWeight):
     def __init__(self, v=1):
@@ -69,3 +86,7 @@ class SechLossWeight(BaseLossWeight):
 class DebiasedLossWeight(BaseLossWeight):
     def weight(self, logSNR):
         return 1/logSNR.exp().sqrt()
+
+class SigmoidLossWeight(BaseLossWeight):
+    def weight(self, logSNR):
+        return logSNR.sigmoid()
