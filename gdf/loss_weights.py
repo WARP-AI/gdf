@@ -65,3 +65,7 @@ class SechLossWeight(BaseLossWeight):
     
     def weight(self, logSNR):
         return 1/(logSNR/self.div).cosh()
+
+class DebiasedLossWeight(BaseLossWeight):
+    def weight(self, logSNR):
+        return 1/logSNR.exp().sqrt()
