@@ -36,8 +36,11 @@ class SNRLossWeight(BaseLossWeight):
         return logSNR.exp()
     
 class P2LossWeight(BaseLossWeight):
-    def weight(self, logSNR, k=1.0, gamma=1.0, s=1.0):
-        return (k + (logSNR * s).exp()) ** -gamma
+    def __init__(self, k=1.0, gamma=1.0, s=1.0):
+        self.k, self.gamma, self.s = k, gamma, s
+
+    def weight(self, logSNR):
+        return (self.k + (logSNR * self.s).exp()) ** -self.gamma
     
 class SNRPlusOneLossWeight(BaseLossWeight):
     def weight(self, logSNR):

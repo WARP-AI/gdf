@@ -13,8 +13,8 @@ Numpy >= 1.0.0
 # In order to install the latest (beta) use
 pip install git+https://github.com/WARP-AI/gdf -U
 
-# if you want to install a specific version to avoid breaking changes (for example, v0.0.11), use 
-pip install git+https://github.com/WARP-AI/gdf@0.0.11 -U
+# if you want to install a specific version to avoid breaking changes (for example, v0.0.12), use 
+pip install git+https://github.com/WARP-AI/gdf@0.0.12 -U
 ```
 
 # Basic usage
