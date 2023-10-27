@@ -13,27 +13,15 @@ class BaseLossWeight():
 
 class ComposedLossWeight(BaseLossWeight):
     def __init__(self, div, mul):
-        self.div = div
-        self.mul = mul
+        self.mul = [mul] if isinstance(mul, BaseLossWeight) else mul       
+        self.div = [div] if isinstance(div, BaseLossWeight) else div       
 
     def weight(self, logSNR):
         prod, div = 1, 1
-        if isinstance(self.div, BaseLossWeight):
-            div *= self.div.weight(logSNR)
-        else:
-            for d in self.div:
-                if isinstance(d, BaseLossWeight):
-                    div *= d.weight(logSNR)
-                else:
-                    div *= d
-        if isinstance(self.mul, BaseLossWeight):
-            prod *= self.mul.weight(logSNR)
-        else:
-            for m in self.mul:
-                if isinstance(m, BaseLossWeight):
-                    prod *= m.weight(logSNR)
-                else:
-                    prod *= m
+        for m in self.mul:
+            prod *= m.weight(logSNR)
+        for d in self.div:
+            div *= d.weight(logSNR)
         return prod/div
 
 class ConstantLossWeight(BaseLossWeight):
