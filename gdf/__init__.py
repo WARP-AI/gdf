@@ -94,7 +94,7 @@ class GDF:
                 else [torch.cat([vi, vi_u], dim=0) for vi, vi_u in zip(v, v_u)]
                 if isinstance(v, list)
                 else {
-                    k: torch.cat([v[vk], v_u.get(vk, torch.zeros_like(v[vk]))], dim=0)
+                    vk: torch.cat([v[vk], v_u.get(vk, torch.zeros_like(v[vk]))], dim=0)
                     for vk in v
                 }
                 if isinstance(v, dict)
