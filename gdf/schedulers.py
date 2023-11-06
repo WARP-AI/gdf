@@ -48,11 +48,13 @@ class CosineTrainSchedule(CosineSampleSchedule):
         return super().schedule(t)
     
 class SqrtSampleSchedule(BaseSchedule):
-    def __init__(self, s=1e-4):
+    def __init__(self, s=1e-4, clamp_range=[0.0001, 0.9999]):
         self.s = s
+        self.clamp_range = clamp_range
 
     def schedule(self, t):
         var = 1 - (t + self.s)**0.5
+        var = var.clamp(*self.clamp_range)
         logSNR = (var/(1-var)).log()
         return logSNR
     
