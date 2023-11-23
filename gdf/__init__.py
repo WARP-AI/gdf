@@ -18,10 +18,7 @@ class GDF():
     def diffuse(self, x0, epsilon=None, t=None, shift=1, loss_shift=1):
         if epsilon is None:
             epsilon = torch.randn_like(x0)
-        if t is None:
-            logSNR = self.train_schedule(x0.size(0), shift=shift).to(x0.device)
-        else:
-            logSNR = self.sample_schedule(t, shift=shift).to(x0.device)
+        logSNR = self.train_schedule(x0.size(0) if t is None else t, shift=shift).to(x0.device)
         a, b = self.input_scaler(logSNR) # B
         a, b = a.view(-1, *[1]*(len(x0.shape)-1)), b.view(-1, *[1]*(len(x0.shape)-1)) # BxCxHxW
         target = self.target(x0, epsilon, logSNR, a, b)

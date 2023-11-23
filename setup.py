@@ -4,7 +4,7 @@ setup(
     name="gdf",
     packages=find_packages(),
     description="Generic Diffusion Framework",
-    version="0.0.14",
+    version="0.1.0",
     url="https://github.com/WARP-AI/gdf",
     author="Pablo Pernías",
     author_email="pablo@pernias.com",
