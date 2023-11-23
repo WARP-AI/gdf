@@ -11,7 +11,7 @@ class BaseSchedule():
         else:
             batch_size = t
             t = None
-        logSNR = self.schedule(t, batch_size, *args, **kwargs)
+        logSNR = self.schedule(t.clamp(0, 1), batch_size, *args, **kwargs)
         if shift != 1:
             logSNR += 2 * np.log(1/shift)
         return logSNR
