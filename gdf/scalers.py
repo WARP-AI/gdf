@@ -2,7 +2,7 @@ def BaseScaler():
     def __init__(self):
         self.adjusted_limits = None
 
-    def schedule(self, logSNR):
+    def __call__(self, logSNR):
         raise Exception("this method needs to be overriden")
 
     def setup_limits(self, min_a, max_a, min_b, max_b):
