@@ -14,7 +14,18 @@ class GDF():
         self.target = target
         self.noise_cond = noise_cond
         self.loss_weight = loss_weight
+        self.adjusted_limits = None
 
+    def setup_limits(self, ajust_max=True, ajust_min=True, shift=1):
+        min_logSNR = self.train_schedule(torch.ones(1), shift=shift).item()
+        max_logSNR = self.train_schedule(torch.zeros(1), shift=shift).item()
+        
+        min_a, max_b = self.input_scaler(min_logSNR) if ajust_max else 0, 1
+        max_a, min_b = self.input_scaler(max_logSNR) if ajust_min else 1, 0
+        adjusted_limits = [min_a, max_a, min_b, max_b]
+        self.input_scaler.setup_limits(*adjusted_limits)
+        return self.adjusted_limits
+    
     def diffuse(self, x0, epsilon=None, t=None, shift=1, loss_shift=1):
         if epsilon is None:
             epsilon = torch.randn_like(x0)
