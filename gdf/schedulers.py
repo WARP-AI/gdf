@@ -8,10 +8,11 @@ class BaseSchedule():
     def __call__(self, t, *args, shift=1, **kwargs):
         if isinstance(t, torch.Tensor):
             batch_size = None
+            t = t.clamp(0, 1)
         else:
             batch_size = t
             t = None
-        logSNR = self.schedule(t.clamp(0, 1), batch_size, *args, **kwargs)
+        logSNR = self.schedule(t, batch_size, *args, **kwargs)
         if shift != 1:
             logSNR += 2 * np.log(1/shift)
         return logSNR
