@@ -16,13 +16,7 @@ class GDF():
         self.loss_weight = loss_weight
 
     def setup_limits(self, stretch_max=True, stretch_min=True, shift=1):
-        min_logSNR = self.train_schedule(torch.ones(1), shift=shift)
-        max_logSNR = self.train_schedule(torch.zeros(1), shift=shift)
-        
-        min_a, max_b = [v.item() for v in self.input_scaler(min_logSNR)] if stretch_max else [0, 1]
-        max_a, min_b = [v.item() for v in self.input_scaler(max_logSNR)] if stretch_min else [1, 0]
-        stretched_limits = [min_a, max_a, min_b, max_b]
-        self.input_scaler.setup_limits(*stretched_limits)
+        stretched_limits = self.input_scaler.setup_limits(self.train_schedule, self.input_scaler, stretch_max, stretch_min, shift)
         return stretched_limits
     
     def diffuse(self, x0, epsilon=None, t=None, shift=1, loss_shift=1):

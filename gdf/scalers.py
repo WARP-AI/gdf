@@ -1,9 +1,17 @@
+import torch 
+
 class BaseScaler():
     def __init__(self):
         self.stretched_limits = None
 
-    def setup_limits(self, min_a, max_a, min_b, max_b):
-        self.stretched_limits = min_a, max_a, min_b, max_b
+    def setup_limits(self, schedule, input_scaler, stretch_max=True, stretch_min=True, shift=1):
+        min_logSNR = schedule(torch.ones(1), shift=shift)
+        max_logSNR = schedule(torch.zeros(1), shift=shift)
+        
+        min_a, max_b = [v.item() for v in input_scaler(min_logSNR)] if stretch_max else [0, 1]
+        max_a, min_b = [v.item() for v in input_scaler(max_logSNR)] if stretch_min else [1, 0]
+        self.stretched_limits = [min_a, max_a, min_b, max_b]
+        return self.stretched_limits
 
     def stretch_limits(self, a, b):
         min_a, max_a, min_b, max_b = self.stretched_limits

@@ -2,6 +2,15 @@ import torch
 import numpy as np
 
 class BaseSchedule():
+    def __init__(self, *args, force_limits=True, **kwargs):
+        self.setup(*args, **kwargs)
+        self.limits = None
+        if force_limits:
+            self.limits = self(torch.zeros(1)), self(torch.ones(1)) # min, max
+    
+    def setup(self, *args, **kwargs):
+        raise Exception("this method needs to be overriden")
+    
     def schedule(self, *args, **kwargs):
         raise Exception("this method needs to be overriden")
         
@@ -15,10 +24,12 @@ class BaseSchedule():
         logSNR = self.schedule(t, batch_size, *args, **kwargs)
         if shift != 1:
             logSNR += 2 * np.log(1/shift)
+        if self.limits is not None:
+            logSNR = logSNR.clamp(*self.limits)
         return logSNR
 
 class CosineSchedule(BaseSchedule):
-    def __init__(self, s=0.008, clamp_range=[0.0001, 0.9999]):
+    def setup(self, s=0.008, clamp_range=[0.0001, 0.9999]):
         self.s = torch.tensor([s])
         self.clamp_range = clamp_range
         self.min_var = torch.cos(self.s / (1 + self.s) * torch.pi * 0.5) ** 2
@@ -33,7 +44,7 @@ class CosineSchedule(BaseSchedule):
         return logSNR
     
 class CosineSchedule2(BaseSchedule):
-    def __init__(self, logsnr_range=[-15, 15]):
+    def setup(self, logsnr_range=[-15, 15]):
         self.t_min = np.arctan(np.exp(-0.5 * logsnr_range[1]))
         self.t_max = np.arctan(np.exp(-0.5 * logsnr_range[0]))
 
@@ -43,7 +54,7 @@ class CosineSchedule2(BaseSchedule):
         return -2 * (self.t_min + t*(self.t_max-self.t_min)).tan().log()
     
 class SqrtSchedule(BaseSchedule):
-    def __init__(self, s=1e-4, clamp_range=[0.0001, 0.9999]):
+    def setup(self, s=1e-4, clamp_range=[0.0001, 0.9999]):
         self.s = s
         self.clamp_range = clamp_range
 
@@ -56,7 +67,7 @@ class SqrtSchedule(BaseSchedule):
         return logSNR
 
 class RectifiedFlowsSchedule(BaseSchedule):
-    def __init__(self, logsnr_range=[-15, 15]):
+    def setup(self, logsnr_range=[-15, 15]):
         self.logsnr_range = logsnr_range
 
     def schedule(self, t, batch_size):
@@ -66,7 +77,7 @@ class RectifiedFlowsSchedule(BaseSchedule):
         return logSNR
 
 class EDMSampleSchedule(BaseSchedule):
-    def __init__(self, sigma_range=[0.002, 80], p=7):
+    def setup(self, sigma_range=[0.002, 80], p=7):
         self.sigma_range = sigma_range
         self.p = p
 
@@ -79,7 +90,7 @@ class EDMSampleSchedule(BaseSchedule):
         return logSNR
 
 class EDMTrainSchedule(BaseSchedule):
-    def __init__(self, mu=-1.2, std=1.2):
+    def setup(self, mu=-1.2, std=1.2):
         self.mu = mu
         self.std = std
         
@@ -90,7 +101,7 @@ class EDMTrainSchedule(BaseSchedule):
         return logSNR
 
 class LinearSchedule(BaseSchedule):
-    def __init__(self, logsnr_range=[-10, 10]):
+    def setup(self, logsnr_range=[-10, 10]):
         self.logsnr_range = logsnr_range
 
     def schedule(self, t, batch_size):
@@ -100,7 +111,7 @@ class LinearSchedule(BaseSchedule):
         return logSNR
 
 class AdaptiveTrainSchedule(BaseSchedule):
-    def __init__(self, logsnr_range=[-10, 10], buckets=100, min_probs=0.0):
+    def setup(self, logsnr_range=[-10, 10], buckets=100, min_probs=0.0):
         th = torch.linspace(logsnr_range[0], logsnr_range[1], buckets+1)
         self.bucket_ranges = torch.tensor([(th[i], th[i+1]) for i in range(buckets)])
         self.bucket_probs = torch.ones(buckets)
@@ -122,7 +133,7 @@ class AdaptiveTrainSchedule(BaseSchedule):
         self.bucket_probs[range_idx] = self.bucket_probs[range_idx] * beta + loss.cpu() * (1-beta)
 
 class InterpolatedSchedule(BaseSchedule):
-    def __init__(self, scheduler1, scheduler2, shifts=[1.0, 1.0]):
+    def setup(self, scheduler1, scheduler2, shifts=[1.0, 1.0]):
         self.scheduler1 = scheduler1
         self.scheduler2 = scheduler2
         self.shifts = shifts
