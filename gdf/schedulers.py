@@ -6,7 +6,11 @@ class BaseSchedule():
         self.setup(*args, **kwargs)
         self.limits = None
         if force_limits:
-            self.limits = self(torch.tensor([1, 0])).tolist() # min, max
+            self.reset_limits()
+
+    def reset_limits(self, shift=1, disable=False):
+        self.limits = None if disable else self(torch.tensor([1, 0]), shift=shift).tolist() # min, max
+        return self.limits
     
     def setup(self, *args, **kwargs):
         raise Exception("this method needs to be overriden")
