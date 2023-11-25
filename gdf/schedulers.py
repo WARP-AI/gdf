@@ -6,7 +6,7 @@ class BaseSchedule():
         self.setup(*args, **kwargs)
         self.limits = None
         if force_limits:
-            self.limits = self(torch.zeros(1)), self(torch.ones(1)) # min, max
+            self.limits = self(torch.tensor([1, 0])).item() # min, max
     
     def setup(self, *args, **kwargs):
         raise Exception("this method needs to be overriden")
