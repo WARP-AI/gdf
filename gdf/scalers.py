@@ -1,12 +1,12 @@
 class BaseScaler():
     def __init__(self):
-        self.adjusted_limits = None
+        self.stretched_limits = None
 
     def setup_limits(self, min_a, max_a, min_b, max_b):
-        self.adjusted_limits = min_a, max_a, min_b, max_b
+        self.stretched_limits = min_a, max_a, min_b, max_b
 
-    def adjust_limits(self, a, b):
-        min_a, max_a, min_b, max_b = self.adjusted_limits
+    def stretch_limits(self, a, b):
+        min_a, max_a, min_b, max_b = self.stretched_limits
         return a - min_a / (max_a - min_a), b - min_b / (max_b - min_b)
     
     def scalers(self, logSNR):
@@ -14,8 +14,8 @@ class BaseScaler():
     
     def __call__(self, logSNR):
         a, b = self.scalers(logSNR)
-        if self.adjusted_limits is not None:
-            a, b = self.adjust_limits(a, b)
+        if self.stretched_limits is not None:
+            a, b = self.stretch_limits(a, b)
         return a, b
 
 class VPScaler(BaseScaler):
