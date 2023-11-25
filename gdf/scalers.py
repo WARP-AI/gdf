@@ -7,7 +7,7 @@ class BaseScaler():
 
     def stretch_limits(self, a, b):
         min_a, max_a, min_b, max_b = self.stretched_limits
-        return a - min_a / (max_a - min_a), b - min_b / (max_b - min_b)
+        return (a - min_a) / (max_a - min_a), (b - min_b) / (max_b - min_b)
     
     def scalers(self, logSNR):
         raise Exception("this method needs to be overriden")
