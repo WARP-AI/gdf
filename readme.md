@@ -24,12 +24,12 @@ Using this library is very straighforward, first of all just define an instance 
 
 ```python
 from gdf import GDF
-from gdf import CosineTrainSchedule2, CosineSampleSchedule2
+from gdf import CosineSchedule2
 from gdf import VPScaler, VTarget, EDMNoiseCond, ConstantLossWeight
 
 gdf = GDF(
-	train_schedule = CosineTrainSchedule2(logsnr_range=[-15, 15]),
-	sample_schedule = CosineSampleSchedule2(logsnr_range=[-15, 15]),
+	train_schedule = CosineSchedule2(logsnr_range=[-15, 15]),
+	sample_schedule = CosineSchedule2(logsnr_range=[-15, 15]),
 	input_scaler = VPScaler(),
 	target = VTarget(),
 	noise_cond = EDMNoiseCond(),
