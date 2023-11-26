@@ -123,7 +123,7 @@ class AdaptiveTrainSchedule(BaseSchedule):
         
     def schedule(self, t, batch_size):
         if t is not None:
-            raise Exception("EDMTrainSchedule doesn't support passing timesteps: t")
+            raise Exception("AdaptiveTrainSchedule doesn't support passing timesteps: t")
         norm_probs = ((self.bucket_probs+self.min_probs) / (self.bucket_probs+self.min_probs).sum())
         buckets = torch.multinomial(norm_probs, batch_size, replacement=True)
         ranges = self.bucket_ranges[buckets]
