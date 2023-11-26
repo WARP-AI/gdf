@@ -14,7 +14,7 @@ class BaseNoiseCond():
 
     def __call__(self, logSNR):
         if self.shift != 1:
-            logSNR = logSNR.clone() + 2 * np.log(1/self.shift)
+            logSNR = logSNR.clone() + 2 * np.log(self.shift)
         return self.cond(logSNR)
 
 class CosineTNoiseCond(BaseNoiseCond):
