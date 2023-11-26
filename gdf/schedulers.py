@@ -120,21 +120,14 @@ class StableDiffusionSchedule(BaseSchedule):
     def setup(self, linear_range=[0.00085, 0.012], total_steps=1000):
         a, b = linear_range[0]**0.5, linear_range[1]**0.5
         self.total_steps = total_steps
-        self.y_terms = [np.log(1-a**2), np.log(1-b**2), -2 * (b - a) * a / (1 - a**2), -2 * (b - a) * b / (1 - b**2)]
-
-    def polynomial_interpolation_integral(self, x):
-        y0, y1, dy0, dy1 = self.y_terms
-        A =  y0/2 + dy0/4 + dy1/4 - y1/2
-        B = -y0 - 2*dy0/3 - dy1/3 + y1
-        C =         dy0/2
-        D =  y0
-        return ((((A*x)+B)*x+C)*x+D)*x
+        y0, y1, dy0, dy1 = (np.log(1-a**2), np.log(1-b**2), -2 * (b - a) * a / (1 - a**2), -2 * (b - a) * b / (1 - b**2))
+        self.polynomial = np.polynomial.polynomial.Polynomial([0, y0, dy0/2, -y0 - dy0*2/3 - dy1/3 + y1, y0/2 + dy0/4 + dy1/4 - y1/2])
         
     def schedule(self, t, batch_size):
         if t is None:
             t = 1-torch.rand(batch_size)
         t = (t + 1/self.total_steps)/(1+1/self.total_steps)
-        var = np.exp(self.total_steps*self.polynomial_interpolation_integral(t))
+        var = np.exp(self.total_steps*self.polynomial(t))
         logSNR = (var/(1-var)).log()
         return logSNR
 
