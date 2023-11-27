@@ -2,8 +2,9 @@ import torch
 import numpy as np
 
 class BaseNoiseCond():
-    def __init__(self, *args, shift=1, **kwargs):
+    def __init__(self, *args, shift=1, clamp_range=[-1e9, 1e9], **kwargs):
         self.shift = shift
+        self.clamp_range = clamp_range
         self.setup(*args, **kwargs)
 
     def setup(self, *args, **kwargs):
@@ -15,7 +16,7 @@ class BaseNoiseCond():
     def __call__(self, logSNR):
         if self.shift != 1:
             logSNR = logSNR.clone() + 2 * np.log(self.shift)
-        return self.cond(logSNR)
+        return self.cond(logSNR).clamp(*self.clamp_range)
 
 class CosineTNoiseCond(BaseNoiseCond):
     def setup(self, s=0.008, clamp_range=[0, 1]): # [0.0001, 0.9999]
