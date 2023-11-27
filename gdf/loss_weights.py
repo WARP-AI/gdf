@@ -6,10 +6,10 @@ class BaseLossWeight():
     def weight(self, *args, **kwargs):
         raise Exception("this method needs to be overriden")
         
-    def __call__(self, logSNR, *args, shift=1, **kwargs): 
+    def __call__(self, logSNR, *args, shift=1, clamp_range=[-1e9, 1e9], **kwargs): 
         if shift != 1:
             logSNR = logSNR.clone() + 2 * np.log(shift)
-        return self.weight(logSNR, *args, **kwargs)
+        return self.weight(logSNR, *args, **kwargs).clamp(*clamp_range)
 
 class ComposedLossWeight(BaseLossWeight):
     def __init__(self, div, mul):
