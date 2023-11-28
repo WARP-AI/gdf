@@ -118,7 +118,7 @@ class LinearSchedule(BaseSchedule):
 # It needs to define self.x and self.y in the setup() method
 class PiecewiseLinearSchedule(BaseSchedule):
     def piecewise_linear(self, x, xs, ys):
-        indices = torch.searchsorted(xs, x) - 1
+        indices = torch.searchsorted(xs[:-1], x) - 1
         x_min, x_max = xs[indices], xs[indices+1]
         y_min, y_max = ys[indices], ys[indices+1]
         var = y_min + (y_max - y_min) * (x - x_min) / (x_max - x_min)
