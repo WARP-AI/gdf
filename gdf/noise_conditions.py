@@ -42,3 +42,46 @@ class SigmoidNoiseCond(BaseNoiseCond):
 class LogSNRNoiseCond(BaseNoiseCond):
     def cond(self, logSNR):
         return logSNR
+    
+class EDMSigmaNoiseCond(BaseNoiseCond):
+    def setup(self, sigma_data=1):
+        self.sigma_data = sigma_data
+
+    def cond(self, logSNR):
+        return torch.exp(-logSNR / 2) * self.sigma_data
+    
+# Any NoiseCond that cannot be described easily as a continuous function of t
+# It needs to define self.x and self.y in the setup() method
+class PiecewiseLinearNoiseCond(BaseNoiseCond):
+    def piecewise_linear(self, y, xs, ys):
+        indices = (len(xs)-1) - torch.searchsorted(ys.flip(dims=(-1,)), y)
+        x_min, x_max = xs[indices], xs[indices+1]
+        y_min, y_max = ys[indices], ys[indices+1]
+        x = x_min + (x_max - x_min) * (y - y_min) / (y_max - y_min)
+        return x
+
+    def cond(self, logSNR):
+        var = logSNR.sigmoid()
+        t = self.piecewise_linear(var, self.x, self.y) # .mul(1000).round().clamp(min=0)
+        return t
+    
+class StableDiffusionDiscreteNoiseCond(PiecewiseLinearNoiseCond):
+    def setup(self, linear_range=[0.00085, 0.012], total_steps=1000):
+        self.total_steps = total_steps
+        linear_range_sqrt = [r**0.5 for r in linear_range]
+        self.x = torch.linspace(0, 1, total_steps+1)
+        
+        alphas = 1-(linear_range_sqrt[0]*(1-self.x) + linear_range_sqrt[1]*self.x)**2
+        self.y = alphas.cumprod(dim=-1)
+
+class DiscreteStepsNoiseCond(BaseNoiseCond):
+    def setup(self, noise_cond, steps=1000, continuous_range=[0, 1]):
+        self.noise_cond = noise_cond
+        self.steps = steps
+        self.continuous_range = continuous_range
+
+    def cond(self, logSNR):
+        cond = self.noise_cond(logSNR)
+        cond = (cond-self.continuous_range[0]) / (self.continuous_range[1]-self.continuous_range[0])
+        return cond.mul(self.steps-1).long()
+    

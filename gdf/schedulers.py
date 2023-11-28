@@ -114,22 +114,30 @@ class LinearSchedule(BaseSchedule):
         logSNR = t * (self.logsnr_range[0]-self.logsnr_range[1]) + self.logsnr_range[1]
         return logSNR
 
-# Original implementation by tilmann_r (discord username) 
-# https://discord.com/channels/1121232061143986217/1121232062708457509/1178419024229585007
-class StableDiffusionSchedule(BaseSchedule):
-    def setup(self, linear_range=[0.00085, 0.012], total_steps=1000):
-        a, b = linear_range[0]**0.5, linear_range[1]**0.5
-        self.total_steps = total_steps
-        y0, y1, dy0, dy1 = (np.log(1-a**2), np.log(1-b**2), -2 * (b - a) * a / (1 - a**2), -2 * (b - a) * b / (1 - b**2))
-        self.polynomial = np.polynomial.polynomial.Polynomial([0, y0, dy0/2, -y0 - dy0*2/3 - dy1/3 + y1, y0/2 + dy0/4 + dy1/4 - y1/2])
+# Any schedule that cannot be described easily as a continuous function of t
+# It needs to define self.x and self.y in the setup() method
+class PiecewiseLinearSchedule(BaseSchedule):
+    def piecewise_linear(self, x, xs, ys):
+        indices = torch.searchsorted(xs, x) - 1
+        x_min, x_max = xs[indices], xs[indices+1]
+        y_min, y_max = ys[indices], ys[indices+1]
+        var = y_min + (y_max - y_min) * (x - x_min) / (x_max - x_min)
+        return var
         
     def schedule(self, t, batch_size):
         if t is None:
             t = 1-torch.rand(batch_size)
-        t = (t + 1/self.total_steps)/(1+1/self.total_steps)
-        var = np.exp(self.total_steps*self.polynomial(t))
+        var = self.piecewise_linear(t, self.x, self.y)
         logSNR = (var/(1-var)).log()
         return logSNR
+
+class StableDiffusionSchedule(PiecewiseLinearSchedule):
+    def setup(self, linear_range=[0.00085, 0.012], total_steps=1000):
+        linear_range_sqrt = [r**0.5 for r in linear_range]
+        self.x = torch.linspace(0, 1, total_steps+1)
+        
+        alphas = 1-(linear_range_sqrt[0]*(1-self.x) + linear_range_sqrt[1]*self.x)**2
+        self.y = alphas.cumprod(dim=-1)
 
 class AdaptiveTrainSchedule(BaseSchedule):
     def setup(self, logsnr_range=[-10, 10], buckets=100, min_probs=0.0):
