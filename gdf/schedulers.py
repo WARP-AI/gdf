@@ -11,7 +11,7 @@ class BaseSchedule():
 
     def reset_limits(self, shift=1, disable=False):
         try:
-            self.limits = None if disable else self(torch.tensor([1, 0]), shift=shift).tolist() # min, max
+            self.limits = None if disable else self(torch.tensor([1.0, 0.0]), shift=shift).tolist() # min, max
             return self.limits
         except:
             print("WARNING: this schedule doesn't support t and will be unbounded")
