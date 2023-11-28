@@ -62,7 +62,7 @@ class PiecewiseLinearNoiseCond(BaseNoiseCond):
 
     def cond(self, logSNR):
         var = logSNR.sigmoid()
-        t = self.piecewise_linear(var, self.x, self.y) # .mul(1000).round().clamp(min=0)
+        t = self.piecewise_linear(var, self.x.to(var.device), self.y.to(var.device)) # .mul(1000).round().clamp(min=0)
         return t
     
 class StableDiffusionNoiseCond(PiecewiseLinearNoiseCond):

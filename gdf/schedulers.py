@@ -127,7 +127,7 @@ class PiecewiseLinearSchedule(BaseSchedule):
     def schedule(self, t, batch_size):
         if t is None:
             t = 1-torch.rand(batch_size)
-        var = self.piecewise_linear(t, self.x, self.y)
+        var = self.piecewise_linear(t, self.x.to(t.device), self.y.to(t.device))
         logSNR = (var/(1-var)).log()
         return logSNR
 
