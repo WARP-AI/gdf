@@ -7,22 +7,21 @@ from .loss_weights import *
 from .samplers import *
 
 class GDF():
-    def __init__(self, train_schedule, sample_schedule, input_scaler, target, noise_cond, loss_weight):
-        self.train_schedule = train_schedule
-        self.sample_schedule = sample_schedule
+    def __init__(self, schedule, input_scaler, target, noise_cond, loss_weight):
+        self.schedule = schedule
         self.input_scaler = input_scaler
         self.target = target
         self.noise_cond = noise_cond
         self.loss_weight = loss_weight
 
     def setup_limits(self, stretch_max=True, stretch_min=True, shift=1):
-        stretched_limits = self.input_scaler.setup_limits(self.train_schedule, self.input_scaler, stretch_max, stretch_min, shift)
+        stretched_limits = self.input_scaler.setup_limits(self.schedule, self.input_scaler, stretch_max, stretch_min, shift)
         return stretched_limits
     
     def diffuse(self, x0, epsilon=None, t=None, shift=1, loss_shift=1):
         if epsilon is None:
             epsilon = torch.randn_like(x0)
-        logSNR = self.train_schedule(x0.size(0) if t is None else t, shift=shift).to(x0.device)
+        logSNR = self.schedule(x0.size(0) if t is None else t, shift=shift).to(x0.device)
         a, b = self.input_scaler(logSNR) # B
         a, b = a.view(-1, *[1]*(len(x0.shape)-1)), b.view(-1, *[1]*(len(x0.shape)-1)) # BxCxHxW
         target = self.target(x0, epsilon, logSNR, a, b)
@@ -35,11 +34,12 @@ class GDF():
         a, b = a.view(-1, *[1]*(len(x.shape)-1)), b.view(-1, *[1]*(len(x.shape)-1))
         return self.target.x0(x, pred, logSNR, a, b), self.target.epsilon(x, pred, logSNR, a, b)
 
-    def sample(self, model, model_inputs, shape, unconditional_inputs=None, sampler=None, t_start=1.0, t_end=0.0, timesteps=20, x_init=None, cfg=3.0, cfg_rho=0.7, sampler_params={}, shift=1, device="cpu"):
+    def sample(self, model, model_inputs, shape, unconditional_inputs=None, sampler=None, schedule=None, t_start=1.0, t_end=0.0, timesteps=20, x_init=None, cfg=3.0, cfg_rho=0.7, sampler_params={}, shift=1, device="cpu"):
         if sampler is None:
             sampler = DDPMSampler(self)
         r_range = torch.linspace(t_start, t_end, timesteps+1)
-        logSNR_range = self.sample_schedule(r_range, shift=shift)[:, None].expand(
+        schedule = self.sample_schedule if schedule is None else schedule
+        logSNR_range = schedule(r_range, shift=shift)[:, None].expand(
             -1, shape[0] if x_init is None else x_init.size(0)
         ).to(device)
     

@@ -14,8 +14,8 @@ Numpy >= 1.0.0
 # In order to install the latest (beta) use
 pip install git+https://github.com/WARP-AI/gdf -U
 
-# if you want to install a specific version to avoid breaking changes (for example, v0.1.4), use 
-pip install git+https://github.com/WARP-AI/gdf@0.1.4 -U
+# if you want to install a specific version to avoid breaking changes (for example, v0.1.5), use 
+pip install git+https://github.com/WARP-AI/gdf@0.1.5 -U
 ```
 
 # Basic usage
@@ -28,8 +28,7 @@ from gdf import CosineSchedule2
 from gdf import VPScaler, VTarget, EDMNoiseCond, ConstantLossWeight
 
 gdf = GDF(
-	train_schedule = CosineSchedule2(logsnr_range=[-15, 15]),
-	sample_schedule = CosineSchedule2(logsnr_range=[-15, 15]),
+	schedule = CosineSchedule2(logsnr_range=[-15, 15]),
 	input_scaler = VPScaler(),
 	target = VTarget(),
 	noise_cond = EDMNoiseCond(),
@@ -88,6 +87,7 @@ from gdf import DDPMSampler
 shift = 1
 sampling_configs = {
 	"timesteps": 30, "cfg": 7,  "sampler": DDPMSampler(gdf), "shift": shift,
+	"schedule": CosineSchedule2(logsnr_range=[-15, 15])
 }
 
 *_, (sampled, _, _) = gdf.sample(
