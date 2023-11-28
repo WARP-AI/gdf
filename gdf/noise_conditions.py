@@ -65,7 +65,7 @@ class PiecewiseLinearNoiseCond(BaseNoiseCond):
         t = self.piecewise_linear(var, self.x, self.y) # .mul(1000).round().clamp(min=0)
         return t
     
-class StableDiffusionDiscreteNoiseCond(PiecewiseLinearNoiseCond):
+class StableDiffusionNoiseCond(PiecewiseLinearNoiseCond):
     def setup(self, linear_range=[0.00085, 0.012], total_steps=1000):
         self.total_steps = total_steps
         linear_range_sqrt = [r**0.5 for r in linear_range]
@@ -74,7 +74,7 @@ class StableDiffusionDiscreteNoiseCond(PiecewiseLinearNoiseCond):
         alphas = 1-(linear_range_sqrt[0]*(1-self.x) + linear_range_sqrt[1]*self.x)**2
         self.y = alphas.cumprod(dim=-1)
 
-class DiscreteStepsNoiseCond(BaseNoiseCond):
+class DiscreteNoiseCond(BaseNoiseCond):
     def setup(self, noise_cond, steps=1000, continuous_range=[0, 1]):
         self.noise_cond = noise_cond
         self.steps = steps
