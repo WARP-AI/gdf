@@ -38,7 +38,7 @@ class GDF():
         if sampler is None:
             sampler = DDPMSampler(self)
         r_range = torch.linspace(t_start, t_end, timesteps+1)
-        schedule = self.sample_schedule if schedule is None else schedule
+        schedule = self.schedule if schedule is None else schedule
         logSNR_range = schedule(r_range, shift=shift)[:, None].expand(
             -1, shape[0] if x_init is None else x_init.size(0)
         ).to(device)
