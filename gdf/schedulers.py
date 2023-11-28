@@ -2,9 +2,10 @@ import torch
 import numpy as np
 
 class BaseSchedule():
-    def __init__(self, *args, force_limits=True, **kwargs):
+    def __init__(self, *args, force_limits=True, discrete_steps=None, **kwargs):
         self.setup(*args, **kwargs)
         self.limits = None
+        self.discrete_steps = discrete_steps
         if force_limits:
             self.reset_limits()
 
@@ -25,6 +26,10 @@ class BaseSchedule():
     def __call__(self, t, *args, shift=1, **kwargs):
         if isinstance(t, torch.Tensor):
             batch_size = None
+            if self.discrete_steps is not None:
+                if t.dtype != torch.long:
+                    t = (t * (self.discrete_steps-1)).round().long()
+                t = t / (self.discrete_steps-1)
             t = t.clamp(0, 1)
         else:
             batch_size = t
