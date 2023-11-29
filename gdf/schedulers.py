@@ -12,7 +12,7 @@ class BaseSchedule():
 
     def reset_limits(self, shift=1, disable=False):
         try:
-            self.limits = None if disable else self(torch.tensor([1.0, 0.0]), shift=shift*self.shift).tolist() # min, max
+            self.limits = None if disable else self(torch.tensor([1.0, 0.0]), shift=shift).tolist() # min, max
             return self.limits
         except:
             print("WARNING: this schedule doesn't support t and will be unbounded")
@@ -36,7 +36,7 @@ class BaseSchedule():
             batch_size = t
             t = None
         logSNR = self.schedule(t, batch_size, *args, **kwargs)
-        if shift != 1:
+        if shift*self.shift != 1:
             logSNR += 2 * np.log(1/(shift*self.shift))
         if self.limits is not None:
             logSNR = logSNR.clamp(*self.limits)
