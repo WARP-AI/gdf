@@ -2,16 +2,17 @@ import torch
 import numpy as np
 
 class BaseSchedule():
-    def __init__(self, *args, force_limits=True, discrete_steps=None, **kwargs):
+    def __init__(self, *args, force_limits=True, discrete_steps=None, shift=1, **kwargs):
         self.setup(*args, **kwargs)
         self.limits = None
         self.discrete_steps = discrete_steps
+        self.shift = shift
         if force_limits:
             self.reset_limits()
 
     def reset_limits(self, shift=1, disable=False):
         try:
-            self.limits = None if disable else self(torch.tensor([1.0, 0.0]), shift=shift).tolist() # min, max
+            self.limits = None if disable else self(torch.tensor([1.0, 0.0]), shift=shift*self.shift).tolist() # min, max
             return self.limits
         except:
             print("WARNING: this schedule doesn't support t and will be unbounded")
@@ -36,15 +37,16 @@ class BaseSchedule():
             t = None
         logSNR = self.schedule(t, batch_size, *args, **kwargs)
         if shift != 1:
-            logSNR += 2 * np.log(1/shift)
+            logSNR += 2 * np.log(1/(shift*self.shift))
         if self.limits is not None:
             logSNR = logSNR.clamp(*self.limits)
         return logSNR
 
 class CosineSchedule(BaseSchedule):
-    def setup(self, s=0.008, clamp_range=[0.0001, 0.9999]):
+    def setup(self, s=0.008, clamp_range=[0.0001, 0.9999], norm_instead=False):
         self.s = torch.tensor([s])
         self.clamp_range = clamp_range
+        self.norm_instead = norm_instead
         self.min_var = torch.cos(self.s / (1 + self.s) * torch.pi * 0.5) ** 2
 
     def schedule(self, t, batch_size):
@@ -52,7 +54,10 @@ class CosineSchedule(BaseSchedule):
             t = (1-torch.rand(batch_size)).add(0.001).clamp(0.001, 1.0)
         s, min_var = self.s.to(t.device), self.min_var.to(t.device)
         var = torch.cos((s + t)/(1+s) * torch.pi * 0.5).clamp(0, 1) ** 2 / min_var
-        var = var.clamp(*self.clamp_range)
+        if self.norm_instead:
+            var = var * (self.clamp_range[1]-self.clamp_range[0]) + self.clamp_range[0]
+        else:
+            var = var.clamp(*self.clamp_range)
         logSNR = (var/(1-var)).log()
         return logSNR
     
@@ -67,26 +72,32 @@ class CosineSchedule2(BaseSchedule):
         return -2 * (self.t_min + t*(self.t_max-self.t_min)).tan().log()
     
 class SqrtSchedule(BaseSchedule):
-    def setup(self, s=1e-4, clamp_range=[0.0001, 0.9999]):
+    def setup(self, s=1e-4, clamp_range=[0.0001, 0.9999], norm_instead=False):
         self.s = s
         self.clamp_range = clamp_range
+        self.norm_instead = norm_instead
 
     def schedule(self, t, batch_size):
         if t is None:
             t = 1-torch.rand(batch_size)
         var = 1 - (t + self.s)**0.5
-        var = var.clamp(*self.clamp_range)
+        if self.norm_instead:
+            var = var * (self.clamp_range[1]-self.clamp_range[0]) + self.clamp_range[0]
+        else:
+            var = var.clamp(*self.clamp_range)
         logSNR = (var/(1-var)).log()
         return logSNR
 
 class RectifiedFlowsSchedule(BaseSchedule):
-    def setup(self, logsnr_range=[-15, 15]):
+    def setup(self, logsnr_range=[-15, 15], norm_instead=False):
         self.logsnr_range = logsnr_range
+        self.norm_instead = norm_instead
 
     def schedule(self, t, batch_size):
         if t is None:
             t = 1-torch.rand(batch_size)
-        logSNR = (((1-t)**2)/(t**2)).log().clamp(*self.logsnr_range)
+        logSNR = (((1-t)**2)/(t**2)).log()
+        logSNR = logSNR.clamp(*self.logsnr_range)
         return logSNR
 
 class EDMSampleSchedule(BaseSchedule):
