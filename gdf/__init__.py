@@ -56,8 +56,12 @@ class GDF():
         for i in range(0, timesteps):
             noise_cond = self.noise_cond(logSNR_range[i])
             if cfg is not None:
+                cfg_val = cfg
+                if isinstance(cfg_val, (list, tuple)):
+                    assert len(cfg_val) == 2, "cfg must be a float or a list/tuple of length 2"
+                    cfg_val = cfg_val[0] * r_range[i] + cfg_val[1] * (1-r_range[i])
                 pred, pred_unconditional = model(torch.cat([x, x], dim=0), noise_cond.repeat(2), **model_inputs).chunk(2)
-                pred_cfg = torch.lerp(pred_unconditional, pred, cfg)
+                pred_cfg = torch.lerp(pred_unconditional, pred, cfg_val)
                 if cfg_rho > 0:
                     std_pos, std_cfg = pred.std(),  pred_cfg.std()
                     pred = cfg_rho * (pred_cfg * std_pos/(std_cfg+1e-9)) + pred_cfg * (1-cfg_rho)
