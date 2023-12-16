@@ -190,6 +190,7 @@ class InterpolatedSchedule(BaseSchedule):
     def schedule(self, t, batch_size):
         if t is None:
             t = 1-torch.rand(batch_size)
+        t = t.clamp(1e-7, 1-1e-7) # avoid infinities multiplied by 0 which cause nan
         low_logSNR = self.scheduler1(t, shift=self.shifts[0])
         high_logSNR = self.scheduler2(t, shift=self.shifts[1])
         return low_logSNR * t + high_logSNR * (1-t)
