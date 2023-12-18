@@ -14,15 +14,15 @@ class BaseSchedule():
         try:
             self.limits = None if disable else self(torch.tensor([1.0, 0.0]), shift=shift).tolist() # min, max
             return self.limits
-        except:
+        except Exception:
             print("WARNING: this schedule doesn't support t and will be unbounded")
             return None
     
     def setup(self, *args, **kwargs):
-        raise Exception("this method needs to be overriden")
+        raise NotImplementedError("this method needs to be overriden")
     
     def schedule(self, *args, **kwargs):
-        raise Exception("this method needs to be overriden")
+        raise NotImplementedError("this method needs to be overriden")
         
     def __call__(self, t, *args, shift=1, **kwargs):
         if isinstance(t, torch.Tensor):
@@ -137,6 +137,10 @@ class LinearSchedule(BaseSchedule):
 # Any schedule that cannot be described easily as a continuous function of t
 # It needs to define self.x and self.y in the setup() method
 class PiecewiseLinearSchedule(BaseSchedule):
+    def setup(self):
+        self.x = None
+        self.y = None
+
     def piecewise_linear(self, x, xs, ys):
         indices = torch.searchsorted(xs[:-1], x) - 1
         x_min, x_max = xs[indices], xs[indices+1]

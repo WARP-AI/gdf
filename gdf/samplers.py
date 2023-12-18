@@ -14,12 +14,12 @@ class SimpleSampler():
 
     def step(self, x, x0, epsilon, logSNR, logSNR_prev):
         raise NotImplementedError("You should override the 'apply' function.")
-        
+
 class DDIMSampler(SimpleSampler):
     def step(self, x, x0, epsilon, logSNR, logSNR_prev, eta=0):
         a, b = self.gdf.input_scaler(logSNR)
         a, b = a.view(-1, *[1]*(len(x0.shape)-1)), b.view(-1, *[1]*(len(x0.shape)-1))
-        
+
         a_prev, b_prev = self.gdf.input_scaler(logSNR_prev)
         a_prev, b_prev = a_prev.view(-1, *[1]*(len(x0.shape)-1)), b_prev.view(-1, *[1]*(len(x0.shape)-1))
 
@@ -31,7 +31,7 @@ class DDIMSampler(SimpleSampler):
 class DDPMSampler(DDIMSampler):
     def step(self, x, x0, epsilon, logSNR, logSNR_prev, eta=1):
         return super().step(x, x0, epsilon, logSNR, logSNR_prev, eta)
-    
+
 class LCMSampler(SimpleSampler):
     def step(self, x, x0, epsilon, logSNR, logSNR_prev):        
         a_prev, b_prev = self.gdf.input_scaler(logSNR_prev)

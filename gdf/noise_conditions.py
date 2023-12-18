@@ -2,7 +2,8 @@ import torch
 import numpy as np
 
 class BaseNoiseCond():
-    def __init__(self, *args, shift=1, clamp_range=[-1e9, 1e9], **kwargs):
+    def __init__(self, *args, shift=1, clamp_range=None, **kwargs):
+        clamp_range = [-1e9, 1e9] if clamp_range is None else clamp_range
         self.shift = shift
         self.clamp_range = clamp_range
         self.setup(*args, **kwargs)
@@ -11,7 +12,7 @@ class BaseNoiseCond():
         pass # this method is optional, override it if required
     
     def cond(self, logSNR):
-        raise Exception("this method needs to be overriden")
+        raise NotImplementedError("this method needs to be overriden")
 
     def __call__(self, logSNR):
         if self.shift != 1:
@@ -23,7 +24,7 @@ class CosineTNoiseCond(BaseNoiseCond):
         self.s = torch.tensor([s])
         self.clamp_range = clamp_range
         self.min_var = torch.cos(self.s / (1 + self.s) * torch.pi * 0.5) ** 2
-        
+
     def cond(self, logSNR):
         var = logSNR.sigmoid()
         var = var.clamp(*self.clamp_range)
@@ -53,6 +54,10 @@ class EDMSigmaNoiseCond(BaseNoiseCond):
 # Any NoiseCond that cannot be described easily as a continuous function of t
 # It needs to define self.x and self.y in the setup() method
 class PiecewiseLinearNoiseCond(BaseNoiseCond):
+    def setup(self):
+        self.x = None
+        self.y = None
+
     def piecewise_linear(self, y, xs, ys):
         indices = (len(xs)-2) - torch.searchsorted(ys.flip(dims=(-1,))[:-2], y)  
         x_min, x_max = xs[indices], xs[indices+1]
