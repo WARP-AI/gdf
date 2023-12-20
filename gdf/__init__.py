@@ -19,12 +19,13 @@ class GDF():
         stretched_limits = self.input_scaler.setup_limits(self.schedule, self.input_scaler, stretch_max, stretch_min, shift)
         return stretched_limits
 
-    def diffuse(self, x0, epsilon=None, t=None, shift=1, loss_shift=1):
+    def diffuse(self, x0, epsilon=None, t=None, shift=1, loss_shift=1, offset=None):
         if epsilon is None:
             epsilon = torch.randn_like(x0)
         if self.offset_noise > 0:
-            offset = self.offset_noise * torch.randn([x0.size(0), x0.size(1)] + [1]*(len(x0.shape)-2)).to(x0.device)
-            epsilon = epsilon + offset
+            if offset is None:
+                offset = torch.randn([x0.size(0), x0.size(1)] + [1]*(len(x0.shape)-2)).to(x0.device)
+            epsilon = epsilon + offset * self.offset_noise
         logSNR = self.schedule(x0.size(0) if t is None else t, shift=shift).to(x0.device)
         a, b = self.input_scaler(logSNR) # B
         a, b = a.view(-1, *[1]*(len(x0.shape)-1)), b.view(-1, *[1]*(len(x0.shape)-1)) # BxCxHxW
