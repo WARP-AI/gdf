@@ -7,12 +7,13 @@ from .loss_weights import *
 from .samplers import *
 
 class GDF():
-    def __init__(self, schedule, input_scaler, target, noise_cond, loss_weight):
+    def __init__(self, schedule, input_scaler, target, noise_cond, loss_weight, offset_noise=0):
         self.schedule = schedule
         self.input_scaler = input_scaler
         self.target = target
         self.noise_cond = noise_cond
         self.loss_weight = loss_weight
+        self.offset_noise = offset_noise
 
     def setup_limits(self, stretch_max=True, stretch_min=True, shift=1):
         stretched_limits = self.input_scaler.setup_limits(self.schedule, self.input_scaler, stretch_max, stretch_min, shift)
@@ -21,6 +22,9 @@ class GDF():
     def diffuse(self, x0, epsilon=None, t=None, shift=1, loss_shift=1):
         if epsilon is None:
             epsilon = torch.randn_like(x0)
+        if self.offset_noise > 0:
+            offset = self.offset_noise * torch.randn([x0.size(0), x0.size(1)] + [1]*(len(x0.shape)-2)).to(x0.device)
+            epsilon = epsilon + offset
         logSNR = self.schedule(x0.size(0) if t is None else t, shift=shift).to(x0.device)
         a, b = self.input_scaler(logSNR) # B
         a, b = a.view(-1, *[1]*(len(x0.shape)-1)), b.view(-1, *[1]*(len(x0.shape)-1)) # BxCxHxW
