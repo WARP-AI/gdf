@@ -183,7 +183,7 @@ class AdaptiveTrainSchedule(BaseSchedule):
         range_mtx = self.bucket_ranges.unsqueeze(0).expand(logSNR.size(0), -1, -1).to(logSNR.device)
         range_mask = (range_mtx[:, :, 0] <= logSNR[:, None]) * (range_mtx[:, :, 1] > logSNR[:, None]).float()
         range_idx = range_mask.argmax(-1).cpu()
-        self.bucket_probs[range_idx] = self.bucket_probs[range_idx] * beta + loss.cpu() * (1-beta)
+        self.bucket_probs[range_idx] = self.bucket_probs[range_idx] * beta + loss.detach().cpu() * (1-beta)
 
 class InterpolatedSchedule(BaseSchedule):
     def setup(self, scheduler1, scheduler2, shifts=[1.0, 1.0]):

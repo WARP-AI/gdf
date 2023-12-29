@@ -98,4 +98,4 @@ class AdaptiveLossWeights(BaseLossWeight):
     
     def update_buckets(self, logSNR, loss, beta=0.99):
         indices = torch.searchsorted(self.bucket_ranges, logSNR)
-        self.bucket_losses[indices] = self.bucket_losses[indices]*beta + loss * (1-beta)
+        self.bucket_losses[indices] = self.bucket_losses[indices]*beta + loss.detach().cpu() * (1-beta)
