@@ -86,7 +86,7 @@ class SigmoidLossWeight(BaseLossWeight):
     def weight(self, logSNR):
         return (logSNR * self.s).sigmoid()
 
-class AdaptiveLossWeights(BaseLossWeight):
+class AdaptiveLossWeight(BaseLossWeight):
     def __init__(self, logsnr_range=[-10, 10], buckets=300, weight_range=[1e-7, 1e7]):
         self.bucket_ranges = torch.linspace(logsnr_range[0], logsnr_range[1], buckets-1)
         self.bucket_losses = torch.ones(buckets)
