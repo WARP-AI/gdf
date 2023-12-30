@@ -94,7 +94,7 @@ class AdaptiveLossWeight(BaseLossWeight):
 
     def weight(self, logSNR):
         indices = torch.searchsorted(self.bucket_ranges.to(logSNR.device), logSNR)
-        return (1/self.bucket_losses[indices]).clamp(*self.weight_range)
+        return (1/self.bucket_losses.to(logSNR.device)[indices]).clamp(*self.weight_range)
     
     def update_buckets(self, logSNR, loss, beta=0.99):
         indices = torch.searchsorted(self.bucket_ranges.to(logSNR.device), logSNR).cpu()
