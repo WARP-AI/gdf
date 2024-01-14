@@ -28,7 +28,8 @@ class GDF():
             epsilon = epsilon + offset * self.offset_noise
         logSNR = self.schedule(x0.size(0) if t is None else t, shift=shift).to(x0.device)
         a, b = self.input_scaler(logSNR) # B
-        a, b = a.view(-1, *[1]*(len(x0.shape)-1)), b.view(-1, *[1]*(len(x0.shape)-1)) # BxCxHxW
+        if len(a.shape) == 1:
+            a, b = a.view(-1, *[1]*(len(x0.shape)-1)), b.view(-1, *[1]*(len(x0.shape)-1)) # BxCxHxW
         target = self.target(x0, epsilon, logSNR, a, b)
 
         # noised, noise, logSNR, t_cond
@@ -36,7 +37,8 @@ class GDF():
 
     def undiffuse(self, x, logSNR, pred):
         a, b = self.input_scaler(logSNR)
-        a, b = a.view(-1, *[1]*(len(x.shape)-1)), b.view(-1, *[1]*(len(x.shape)-1))
+        if len(a.shape) == 1:
+            a, b = a.view(-1, *[1]*(len(x.shape)-1)), b.view(-1, *[1]*(len(x.shape)-1))
         return self.target.x0(x, pred, logSNR, a, b), self.target.epsilon(x, pred, logSNR, a, b)
 
     def sample(self, model, model_inputs, shape, unconditional_inputs=None, sampler=None, schedule=None, t_start=1.0, t_end=0.0, timesteps=20, x_init=None, cfg=3.0, cfg_rho=0.7, sampler_params=None, shift=1, device="cpu"):
