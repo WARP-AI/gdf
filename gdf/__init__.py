@@ -57,8 +57,8 @@ class GDF():
                 unconditional_inputs = {k: torch.zeros_like(v) for k, v in model_inputs.items()}
             model_inputs = {
                 k: torch.cat([v, v_u], dim=0) if isinstance(v, torch.Tensor) 
-                else [torch.cat([vi, vi_u], dim=0) for vi, vi_u in zip(v, v_u)] if isinstance(v, list) 
-                else {vk: torch.cat([v[vk], v_u.get(vk, torch.zeros_like(v[vk]))], dim=0) for vk in v} if isinstance(v, dict) 
+                else [torch.cat([vi, vi_u], dim=0) if isinstance(vi, torch.Tensor) and isinstance(vi_u, torch.Tensor) else None for vi, vi_u in zip(v, v_u)] if isinstance(v, list)
+                else {vk: torch.cat([v[vk], v_u.get(vk, torch.zeros_like(v[vk]))], dim=0) for vk in v} if isinstance(v, dict)
                 else None for (k, v), (k_u, v_u) in zip(model_inputs.items(), unconditional_inputs.items())
             }
         for i in range(0, timesteps):
