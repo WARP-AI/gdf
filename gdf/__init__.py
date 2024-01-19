@@ -41,7 +41,7 @@ class GDF():
             a, b = a.view(-1, *[1]*(len(x.shape)-1)), b.view(-1, *[1]*(len(x.shape)-1))
         return self.target.x0(x, pred, logSNR, a, b), self.target.epsilon(x, pred, logSNR, a, b)
 
-    def sample(self, model, model_inputs, shape, unconditional_inputs=None, sampler=None, schedule=None, t_start=1.0, t_end=0.0, timesteps=20, x_init=None, cfg=3.0, cfg_rho=0.7, sampler_params=None, shift=1, device="cpu"):
+    def sample(self, model, model_inputs, shape, unconditional_inputs=None, sampler=None, schedule=None, t_start=1.0, t_end=0.0, timesteps=20, x_init=None, cfg=3.0, cfg_t_stop=None, cfg_t_start=None, cfg_rho=0.7, sampler_params=None, shift=1, device="cpu"):
         sampler_params = {} if sampler_params is None else sampler_params
         if sampler is None:
             sampler = DDPMSampler(self)
@@ -63,7 +63,7 @@ class GDF():
             }
         for i in range(0, timesteps):
             noise_cond = self.noise_cond(logSNR_range[i])
-            if cfg is not None:
+            if cfg is not None and (cfg_t_stop is None or r_range[i].item() >= cfg_t_stop) and (cfg_t_start is None or r_range[i].item() <= cfg_t_start):
                 cfg_val = cfg
                 if isinstance(cfg_val, (list, tuple)):
                     assert len(cfg_val) == 2, "cfg must be a float or a list/tuple of length 2"
