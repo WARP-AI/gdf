@@ -80,7 +80,7 @@ class GDF():
             x0, epsilon = self.undiffuse(x, logSNR_range[i], pred)
             x = sampler(x, x0, epsilon, logSNR_range[i], logSNR_range[i+1], **sampler_params)
             altered_vars = yield (x0, x, pred)
-  
+
             # Update some running variables if the user wants
             if altered_vars is not None:
                 cfg = altered_vars.get('cfg', cfg)

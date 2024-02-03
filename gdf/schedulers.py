@@ -17,13 +17,13 @@ class BaseSchedule():
         except Exception:
             print("WARNING: this schedule doesn't support t and will be unbounded")
             return None
-    
+
     def setup(self, *args, **kwargs):
         raise NotImplementedError("this method needs to be overriden")
-    
+
     def schedule(self, *args, **kwargs):
         raise NotImplementedError("this method needs to be overriden")
-        
+
     def __call__(self, t, *args, shift=1, **kwargs):
         if isinstance(t, torch.Tensor):
             batch_size = None
@@ -60,7 +60,7 @@ class CosineSchedule(BaseSchedule):
             var = var.clamp(*self.clamp_range)
         logSNR = (var/(1-var)).log()
         return logSNR
-    
+
 class CosineSchedule2(BaseSchedule):
     def setup(self, logsnr_range=[-15, 15]):
         self.t_min = np.arctan(np.exp(-0.5 * logsnr_range[1]))
@@ -70,7 +70,7 @@ class CosineSchedule2(BaseSchedule):
         if t is None:
             t = 1-torch.rand(batch_size)
         return -2 * (self.t_min + t*(self.t_max-self.t_min)).tan().log()
-    
+
 class SqrtSchedule(BaseSchedule):
     def setup(self, s=1e-4, clamp_range=[0.0001, 0.9999], norm_instead=False):
         self.s = s
@@ -97,7 +97,10 @@ class RectifiedFlowsSchedule(BaseSchedule):
         if t is None:
             t = 1-torch.rand(batch_size)
         logSNR = (((1-t)**2)/(t**2)).log()
-        logSNR = logSNR.clamp(*self.logsnr_range)
+        if self.norm_instead:
+            logSNR = logSNR * (self.logsnr_range[1]-self.logsnr_range[0]) + self.logsnr_range[0]
+        else:
+            logSNR = logSNR.clamp(*self.logsnr_range)
         return logSNR
 
 class EDMSampleSchedule(BaseSchedule):
@@ -117,7 +120,7 @@ class EDMTrainSchedule(BaseSchedule):
     def setup(self, mu=-1.2, std=1.2):
         self.mu = mu
         self.std = std
-        
+
     def schedule(self, t, batch_size):
         if t is not None:
             raise Exception("EDMTrainSchedule doesn't support passing timesteps: t")
@@ -147,7 +150,7 @@ class PiecewiseLinearSchedule(BaseSchedule):
         y_min, y_max = ys[indices], ys[indices+1]
         var = y_min + (y_max - y_min) * (x - x_min) / (x_max - x_min)
         return var
-        
+
     def schedule(self, t, batch_size):
         if t is None:
             t = 1-torch.rand(batch_size)
@@ -159,7 +162,7 @@ class StableDiffusionSchedule(PiecewiseLinearSchedule):
     def setup(self, linear_range=[0.00085, 0.012], total_steps=1000):
         linear_range_sqrt = [r**0.5 for r in linear_range]
         self.x = torch.linspace(0, 1, total_steps+1)
-        
+
         alphas = 1-(linear_range_sqrt[0]*(1-self.x) + linear_range_sqrt[1]*self.x)**2
         self.y = alphas.cumprod(dim=-1)
 
@@ -169,7 +172,7 @@ class AdaptiveTrainSchedule(BaseSchedule):
         self.bucket_ranges = torch.tensor([(th[i], th[i+1]) for i in range(buckets)])
         self.bucket_probs = torch.ones(buckets)
         self.min_probs = min_probs
-        
+
     def schedule(self, t, batch_size):
         if t is not None:
             raise Exception("AdaptiveTrainSchedule doesn't support passing timesteps: t")
@@ -198,5 +201,4 @@ class InterpolatedSchedule(BaseSchedule):
         low_logSNR = self.scheduler1(t, shift=self.shifts[0])
         high_logSNR = self.scheduler2(t, shift=self.shifts[1])
         return low_logSNR * t + high_logSNR * (1-t)
-    
-    
+

@@ -10,7 +10,7 @@ class BaseNoiseCond():
 
     def setup(self, *args, **kwargs):
         pass # this method is optional, override it if required
-    
+
     def cond(self, logSNR):
         raise NotImplementedError("this method needs to be overriden")
 
@@ -35,7 +35,7 @@ class CosineTNoiseCond(BaseNoiseCond):
 class EDMNoiseCond(BaseNoiseCond):
     def cond(self, logSNR):
         return -logSNR/8
-    
+
 class SigmoidNoiseCond(BaseNoiseCond):
     def cond(self, logSNR):
         return (-logSNR).sigmoid()
@@ -43,14 +43,14 @@ class SigmoidNoiseCond(BaseNoiseCond):
 class LogSNRNoiseCond(BaseNoiseCond):
     def cond(self, logSNR):
         return logSNR
-    
+
 class EDMSigmaNoiseCond(BaseNoiseCond):
     def setup(self, sigma_data=1):
         self.sigma_data = sigma_data
 
     def cond(self, logSNR):
         return torch.exp(-logSNR / 2) * self.sigma_data
-    
+
 # Any NoiseCond that cannot be described easily as a continuous function of t
 # It needs to define self.x and self.y in the setup() method
 class PiecewiseLinearNoiseCond(BaseNoiseCond):
@@ -69,7 +69,7 @@ class PiecewiseLinearNoiseCond(BaseNoiseCond):
         var = logSNR.sigmoid()
         t = self.piecewise_linear(var, self.x.to(var.device), self.y.to(var.device)) # .mul(1000).round().clamp(min=0)
         return t
-    
+
 class StableDiffusionNoiseCond(PiecewiseLinearNoiseCond):
     def setup(self, linear_range=[0.00085, 0.012], total_steps=1000):
         self.total_steps = total_steps

@@ -39,4 +39,3 @@ class LERPScaler(BaseScaler):
         a = 1 + (2-(2**2 + 4*_a)**0.5) / (2*_a)
         b = 1-a
         return a, b
-
