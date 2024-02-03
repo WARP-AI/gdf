@@ -51,7 +51,7 @@ class EDMSigmaNoiseCond(BaseNoiseCond):
     def cond(self, logSNR):
         return torch.exp(-logSNR / 2) * self.sigma_data
 
-class RectifiedFlowsNoiseCon(BaseNoiseCond):
+class RectifiedFlowsNoiseCond(BaseNoiseCond):
     def cond(self, logSNR):
         _a = logSNR.exp() - 1
         a = 1 + (2-(2**2 + 4*_a)**0.5) / (2*_a)
