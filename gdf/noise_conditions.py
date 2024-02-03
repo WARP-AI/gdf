@@ -51,6 +51,12 @@ class EDMSigmaNoiseCond(BaseNoiseCond):
     def cond(self, logSNR):
         return torch.exp(-logSNR / 2) * self.sigma_data
 
+class RectifiedFlowsNoiseCon(BaseNoiseCond):
+    def cond(self, logSNR):
+        _a = logSNR.exp() - 1
+        a = 1 + (2-(2**2 + 4*_a)**0.5) / (2*_a)
+        return a
+
 # Any NoiseCond that cannot be described easily as a continuous function of t
 # It needs to define self.x and self.y in the setup() method
 class PiecewiseLinearNoiseCond(BaseNoiseCond):
@@ -75,7 +81,7 @@ class StableDiffusionNoiseCond(PiecewiseLinearNoiseCond):
         self.total_steps = total_steps
         linear_range_sqrt = [r**0.5 for r in linear_range]
         self.x = torch.linspace(0, 1, total_steps+1)
-        
+
         alphas = 1-(linear_range_sqrt[0]*(1-self.x) + linear_range_sqrt[1]*self.x)**2
         self.y = alphas.cumprod(dim=-1)
 

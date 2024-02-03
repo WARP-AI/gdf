@@ -89,18 +89,14 @@ class SqrtSchedule(BaseSchedule):
         return logSNR
 
 class RectifiedFlowsSchedule(BaseSchedule):
-    def setup(self, logsnr_range=[-15, 15], norm_instead=False):
+    def setup(self, logsnr_range=[-15, 15]):
         self.logsnr_range = logsnr_range
-        self.norm_instead = norm_instead
 
     def schedule(self, t, batch_size):
         if t is None:
             t = 1-torch.rand(batch_size)
         logSNR = (((1-t)**2)/(t**2)).log()
-        if self.norm_instead:
-            logSNR = logSNR * (self.logsnr_range[1]-self.logsnr_range[0]) + self.logsnr_range[0]
-        else:
-            logSNR = logSNR.clamp(*self.logsnr_range)
+        logSNR = logSNR.clamp(*self.logsnr_range)
         return logSNR
 
 class EDMSampleSchedule(BaseSchedule):

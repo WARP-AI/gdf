@@ -5,7 +5,7 @@ import numpy as np
 class BaseLossWeight():
     def weight(self, logSNR):
         raise NotImplementedError("this method needs to be overridden")
-        
+
     def __call__(self, logSNR, *args, shift=1, clamp_range=None, **kwargs):
         clamp_range = [-1e9, 1e9] if clamp_range is None else clamp_range
         if shift != 1:
@@ -95,7 +95,7 @@ class AdaptiveLossWeight(BaseLossWeight):
     def weight(self, logSNR):
         indices = torch.searchsorted(self.bucket_ranges.to(logSNR.device), logSNR)
         return (1/self.bucket_losses.to(logSNR.device)[indices]).clamp(*self.weight_range)
-    
+
     def update_buckets(self, logSNR, loss, beta=0.99):
         indices = torch.searchsorted(self.bucket_ranges.to(logSNR.device), logSNR).cpu()
         self.bucket_losses[indices] = self.bucket_losses[indices]*beta + loss.detach().cpu() * (1-beta)
