@@ -99,6 +99,37 @@ class RectifiedFlowsSchedule(BaseSchedule):
         logSNR = logSNR.clamp(*self.logsnr_range)
         return logSNR
 
+# --- Keeping this here for efficiency reasons (x3 faster than LogisticNormalSchedule).
+# --- For generat purposes use LogisticNormalSchedule. It works for both
+# --- training and inference since it accepts timestep and batch size
+class LogisticNormalTrainSchedule(BaseSchedule):
+    def setup(self, m=0.0, s=1.0, logsnr_range=[-15, 15]):
+        self.m = m
+        self.s = s
+        self.logsnr_range = logsnr_range
+
+    def schedule(self, t, batch_size):
+        if t is not None:
+            raise Exception(
+                "LogisticNormalTrainSchedule doesn't support passing timesteps: t"
+            )
+        t = (torch.randn(batch_size) * self.s + self.m).sigmoid()
+        logSNR = 2 * ((1 - t) / t).log()
+        logSNR = logSNR.clamp(*self.logsnr_range)
+        return logSNR
+
+
+class LogisticNormalSchedule(BaseSchedule):
+    def setup(self, m=0.0, s=1.0, logsnr_range=[-15, 15]):
+        self.dist = torch.distributions.Normal(m, s)
+        self.logsnr_range = logsnr_range
+
+    def schedule(self, t, batch_size):
+        if t is None:
+            t = 1 - torch.rand(batch_size)
+        logSNR = (2 * self.dist.icdf(1 - t)).clamp(*self.logsnr_range)
+        return logSNR
+
 class EDMSampleSchedule(BaseSchedule):
     def setup(self, sigma_range=[0.002, 80], p=7):
         self.sigma_range = sigma_range
