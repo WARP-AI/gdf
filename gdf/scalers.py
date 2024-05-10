@@ -35,8 +35,6 @@ class VPScaler(BaseScaler):
 
 class LERPScaler(BaseScaler):
     def scalers(self, logSNR):
-        _a = logSNR.exp() - 1
-        _a[_a == 0] = 1e-3 # Avoid division by zero
-        a = 1 + (2-(2**2 + 4*_a)**0.5) / (2*_a)
-        b = 1-a
+        a = logSNR.div(2).sigmoid()
+        b = 1 - a
         return a, b
