@@ -53,10 +53,8 @@ class EDMSigmaNoiseCond(BaseNoiseCond):
 
 class RectifiedFlowsNoiseCond(BaseNoiseCond):
     def cond(self, logSNR):
-        _a = logSNR.exp() - 1
-        _a[_a == 0] = 1e-3 # Avoid division by zero
-        a = 1 + (2-(2**2 + 4*_a)**0.5) / (2*_a)
-        return a
+        a = logSNR.div(2).sigmoid()
+        return 1 - a
 
 # Any NoiseCond that cannot be described easily as a continuous function of t
 # It needs to define self.x and self.y in the setup() method
